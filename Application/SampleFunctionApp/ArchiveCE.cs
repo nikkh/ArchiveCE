@@ -35,10 +35,29 @@ namespace SampleFunctionApp
              .Build();
 
             var continuousExportStorageConnectionString = config["ContinuousExportStorageConnectionString"];
-            log.LogInformation($"CE export storage connection string: {continuousExportStorageConnectionString.Substring(1, 15)}");
+            if (continuousExportStorageConnectionString == null)
+            {
+                log.LogCritical(@"Variable ContinuousExportStorageConnectionString is not set in configuration.  This function cannot run. ");
+                return;
+            }
+            log.LogInformation($"CE export storage connection string: {continuousExportStorageConnectionString.Substring(0, 25)}");
+
             var archiveStorageConnectionString = config["ArchiveStorageConnectionString"];
-            log.LogInformation($"Archive storage connection string: {archiveStorageConnectionString.Substring(1, 15)}");
+            if (archiveStorageConnectionString == null)
+            {
+                log.LogCritical(@"Variable ArchiveStorageConnectionString is not set in configuration.  This function cannot run. ");
+                return;
+            }
+            log.LogInformation($"Archive storage connection string: {archiveStorageConnectionString.Substring(0, 25)}");
+
+
             var archiveContainerName = config["ArchiveContainerName"];
+            if (archiveContainerName == null)
+            {
+                log.LogWarning(@"Variable ArchiveContainerName is not set in configuration.  Using default value: 'archive' ");
+                archiveContainerName = "archive";
+            }
+
             log.LogInformation($"Archive container name: {archiveContainerName}");
                         
             var jData = JObject.Parse(eventGridEvent.Data.ToString());
@@ -55,7 +74,7 @@ namespace SampleFunctionApp
             log.LogInformation($"CE Container: {ceContainerName}");
 
             string blobName = "";
-            for (int i = 2; i < u.Segments.Length-1; i++)
+            for (int i = 2; i < u.Segments.Length; i++)
             {
                 blobName += u.Segments[i];
             }
@@ -82,7 +101,9 @@ namespace SampleFunctionApp
                 CloudBlockBlob archiveBlob = archiveStorageContainer.GetBlockBlobReference(blobName);
                 log.LogInformation(($"Set storage tier for archive blob to 'archive'"));
                 await archiveBlob.SetStandardBlobTierAsync(StandardBlobTier.Archive);
-                log.LogInformation(($"copying blob from CE account {ceStorageAccount.BlobStorageUri}, CE container {ceContainerName}"));
+                log.LogInformation(($"Set storage tier for archive blob to 'archive'"));
+                archiveBlob.Metadata.Add("traceability", $"archived by ArchiveCE Azure function at {System.DateTime.UtcNow} UTC)");
+                await archiveBlob.SetMetadataAsync();
                 log.LogInformation(($"copying blob to archive account {archiveStorageAccount.BlobStorageUri}, archive container {archiveContainerName}"));
                 string result = await archiveBlob.StartCopyAsync(ceBlob);
                 log.LogInformation(($"Result of Blob copy operation: {result}."));
@@ -90,11 +111,11 @@ namespace SampleFunctionApp
             catch (Exception e)
             {
                 log.LogError($"Unable to archive blob Name: {blobName}.  Exception was {e.Message}");
-                log.LogTrace($"Unable to archive blob Name: {blobName}.  Exception was {e.StackTrace}");
+                log.LogError($"Unable to archive blob Name: {blobName}.  Exception was {e.StackTrace}");
                 if (e.InnerException != null)
                 {
                     log.LogError($"Unable to archive blob Name: {blobName}.  Inner Exception was {e.InnerException.Message}");
-                    log.LogTrace($"Unable to archive blob Name: {blobName}.  Exception was {e.InnerException.StackTrace}");
+                    log.LogError($"Unable to archive blob Name: {blobName}.  Exception was {e.InnerException.StackTrace}");
                 }
             }
 
