@@ -19,9 +19,15 @@
         "storageAccountName": {
             "type": "string"          
         }, 
-         "archiveStorageAccountName": {
+        "archiveStorageResourceGroup": {
+            "type": "string"          
+        },
+        "archiveStorageAccountName": {
             "type": "string"          
         }, 
+        "continuousExportStorageResourceGroup": {
+            "type": "string"          
+        },
          "continuousExportStorageAccountName": {
             "type": "string"          
         },  
@@ -116,12 +122,17 @@
                     },
                     {
                         "name": "ArchiveStorageConnectionString",
-                        "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('archiveStorageAccountName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('archiveStorageAccountName')), '2015-05-01-preview').key1)]"
+                        "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('archiveStorageAccountName'),';AccountKey=',listKeys(resourceId(parameters('archiveStorageResourceGroup'), 'Microsoft.Storage/storageAccounts', parameters('archiveStorageAccountName')), '2015-05-01-preview').key1)]"
                     },
                      {
                         "name": "ContinuousExportStorageConnectionString",
-                        "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('continuousExportStorageAccountName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('continuousExportStorageAccountName')), '2015-05-01-preview').key1)]"
+                        "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('continuousExportStorageAccountName'),';AccountKey=',listKeys(resourceId(parameters('continuousExportStorageResourceGroup'),'Microsoft.Storage/storageAccounts', parameters('continuousExportStorageAccountName')), '2015-05-01-preview').key1)]"
                     },
+
+
+/subscriptions/796b222b-b926-4bd5-a6c6-b7f6041433d7/resourceGroups/nicksfunctiondemo-rg/providers/Microsoft.Storage/storageAccounts/cearchive
+resourceId('otherResourceGroup', 'Microsoft.Storage/storageAccounts','examplestorage')
+
                     {
                         "name": "FUNCTIONS_EXTENSION_VERSION",
                         "value": "~2"
