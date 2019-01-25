@@ -13,6 +13,7 @@ using System;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace SampleFunctionApp
 {
@@ -130,15 +131,39 @@ namespace SampleFunctionApp
                 
                 log.LogInformation(($"copying blob to archive account {archiveStorageAccount.BlobStorageUri}, archive container {archiveContainerName}"));
                 string result = await archiveBlob.StartCopyAsync(new Uri(ceBlobSAS));
-                log.LogInformation($"Result of Blob copy operation: {result}.");
 
-                log.LogInformation($"Set storage tier for archive blob to 'archive'");
-                await archiveBlob.SetStandardBlobTierAsync(StandardBlobTier.Archive);
+                bool pending = true;
+                while (pending)
+                {
+                    pending = false;
+                    if (archiveBlob.CopyState.Status == CopyStatus.Aborted ||
+                        archiveBlob.CopyState.Status == CopyStatus.Failed)
+                    {
+                        // Log the copy status description for diagnostics 
+                        // and restart copy
+                        log.LogError($"Copy did not complete sucessfully. State: {archiveBlob.CopyState}");
 
-                log.LogInformation(($"set traceability in archive blob metadata"));
-                archiveBlob.Metadata.Add("traceability", $"archived by ArchiveCE Azure function at {System.DateTime.UtcNow} UTC)");
-                await archiveBlob.SetMetadataAsync();
+                    }
+                    else if (archiveBlob.CopyState.Status == CopyStatus.Pending)
+                    {
+                        log.LogTrace($"Copy has not finished. State: {archiveBlob.CopyState}");
+                        pending = true;
+                        Thread.Sleep(5000);
+                    }
+                    log.LogInformation($"Copy has finished. State: {archiveBlob.CopyState}");
+                };
 
+                if (archiveBlob.CopyState.Status == CopyStatus.Success)
+                {
+                    log.LogInformation($"Copy completed sucessfully!");
+                    log.LogInformation(($"set traceability in archive blob metadata"));
+                    archiveBlob.Metadata.Add("traceability", $"archived by ArchiveCE Azure function at {System.DateTime.UtcNow} UTC)");
+                    await archiveBlob.SetMetadataAsync();
+
+                    log.LogInformation($"Set storage tier for archive blob to 'archive'");
+                    await archiveBlob.SetStandardBlobTierAsync(StandardBlobTier.Archive);
+
+                }
             }
             catch (Exception e)
             {
