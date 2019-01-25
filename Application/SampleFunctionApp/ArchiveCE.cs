@@ -21,6 +21,14 @@ namespace SampleFunctionApp
         [FunctionName("ArchiveCE")]
         public static async Task Run([EventGridTrigger]EventGridEvent eventGridEvent, ILogger log, ExecutionContext context)
         {
+            log.LogTrace("Test trace log");
+            log.LogDebug("Test debug log");
+            log.LogInformation("Test information log");
+            log.LogWarning("Test warning log");
+            log.LogError("Test error log");
+            log.LogCritical("Test critical log");
+            log.LogMetric("Test metric log", 3.14157);
+
             log.LogInformation($"ArchiveCE function was triggered with the following Event Data: {eventGridEvent.Data}");
             if (eventGridEvent.EventType != "Microsoft.Storage.BlobCreated")
             {
@@ -41,7 +49,7 @@ namespace SampleFunctionApp
                 log.LogCritical(m);
                 throw new Exception(m);
             }
-            log.LogInformation($"CE export storage connection string: {continuousExportStorageConnectionString.Substring(0, 25)}");
+            log.LogInformation($"CE export storage connection string: {continuousExportStorageConnectionString.Substring(0, 40)}");
 
             var archiveStorageConnectionString = config["ArchiveStorageConnectionString"];
             if (archiveStorageConnectionString == null)
@@ -50,7 +58,7 @@ namespace SampleFunctionApp
                 log.LogCritical(m);
                 throw new Exception(m);
             }
-            log.LogInformation($"Archive storage connection string: {archiveStorageConnectionString.Substring(0, 25)}");
+            log.LogInformation($"Archive storage connection string: {archiveStorageConnectionString.Substring(0, 40)}");
 
 
             var archiveContainerName = config["ArchiveContainerName"];
@@ -66,7 +74,7 @@ namespace SampleFunctionApp
 
             log.LogInformation($"Event Type: {eventGridEvent.EventType}");
             log.LogInformation($"Subject: {eventGridEvent.Subject}");
-            log.LogInformation($"api: {jData["api"]}");
+            
             log.LogInformation($"url: {jData["url"]}");
             log.LogInformation($"blobType: {jData["blobType"]}");
             log.LogInformation($"contentLength: {jData["contentLength"]}");
@@ -101,7 +109,7 @@ namespace SampleFunctionApp
                 }
                 archiveStorageContainer.Metadata.Add("origin", "Create automatically by ArchiveCE Function");
                 await archiveStorageContainer.SetMetadataAsync();
-                log.LogInformation($"archiveStorageContainer.Uri: {ceStorageContainer.Uri}");
+                log.LogInformation($"archiveStorageContainer.Uri: {archiveStorageContainer.Uri}");
 
                 CloudBlockBlob ceBlob = ceStorageContainer.GetBlockBlobReference(blobName);
                 log.LogInformation($"ceBlob.Uri: {ceBlob.Uri}");
@@ -119,19 +127,17 @@ namespace SampleFunctionApp
 
                 CloudBlockBlob archiveBlob = archiveStorageContainer.GetBlockBlobReference(blobName);
                 log.LogInformation($"archiveBlob.Uri: {archiveBlob.Uri}");
+                
+                log.LogInformation(($"copying blob to archive account {archiveStorageAccount.BlobStorageUri}, archive container {archiveContainerName}"));
+                string result = await archiveBlob.StartCopyAsync(new Uri(ceBlobSAS)).ConfigureAwait(false);
+                log.LogInformation($"Result of Blob copy operation: {result}.");
+
                 log.LogInformation($"Set storage tier for archive blob to 'archive'");
                 await archiveBlob.SetStandardBlobTierAsync(StandardBlobTier.Archive);
 
                 log.LogInformation(($"set traceability in archive blob metadata"));
                 archiveBlob.Metadata.Add("traceability", $"archived by ArchiveCE Azure function at {System.DateTime.UtcNow} UTC)");
                 await archiveBlob.SetMetadataAsync();
-
-                log.LogInformation(($"copying blob to archive account {archiveStorageAccount.BlobStorageUri}, archive container {archiveContainerName}"));
-                string result = await archiveBlob.StartCopyAsync(new Uri(ceBlobSAS)).ConfigureAwait(false);
-                log.LogInformation($"Result of Blob copy operation: {result}.");
-
-                
-                
 
             }
             catch (Exception e)
