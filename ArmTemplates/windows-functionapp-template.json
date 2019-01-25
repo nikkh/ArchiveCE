@@ -30,7 +30,7 @@
                 "name": "Standard_LRS",
                 "tier": "Standard"
             },
-            "kind": "Storage",
+            "kind": "StorageV2",
             "name": "[parameters('storageAccountName')]",
             "apiVersion": "2018-07-01",
             "location": "[resourceGroup().location]",
