@@ -129,7 +129,7 @@ namespace SampleFunctionApp
                 log.LogInformation($"archiveBlob.Uri: {archiveBlob.Uri}");
                 
                 log.LogInformation(($"copying blob to archive account {archiveStorageAccount.BlobStorageUri}, archive container {archiveContainerName}"));
-                string result = await archiveBlob.StartCopyAsync(new Uri(ceBlobSAS)).ConfigureAwait(false);
+                string result = await archiveBlob.StartCopyAsync(new Uri(ceBlobSAS));
                 log.LogInformation($"Result of Blob copy operation: {result}.");
 
                 log.LogInformation($"Set storage tier for archive blob to 'archive'");
@@ -142,13 +142,13 @@ namespace SampleFunctionApp
             }
             catch (Exception e)
             {
-                log.LogError($"Unable to archive blob Name: {blobName}.  Exception was {e.Message}");
-                log.LogError($"Unable to archive blob Name: {blobName}.  Stacktrace was {e.StackTrace}");
-                if (e.InnerException != null)
-                {
-                    log.LogError($"Unable to archive blob Name: {blobName}.  Inner Exception was {e.InnerException.Message}");
-                    log.LogError($"Unable to archive blob Name: {blobName}.  Stacktrace was {e.InnerException.StackTrace}");
-                }
+                //log.LogError($"Unable to archive blob Name: {blobName}.  Exception was {e.Message}");
+                //log.LogError($"Unable to archive blob Name: {blobName}.  Stacktrace was {e.StackTrace}");
+                //if (e.InnerException != null)
+                //{
+                //    log.LogError($"Unable to archive blob Name: {blobName}.  Inner Exception was {e.InnerException.Message}");
+                //    log.LogError($"Unable to archive blob Name: {blobName}.  Stacktrace was {e.InnerException.StackTrace}");
+                //}
                 throw e;
             }
 
