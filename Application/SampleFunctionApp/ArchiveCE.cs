@@ -20,7 +20,7 @@ namespace SampleFunctionApp
     public static class ArchiveCE
     {
         [FunctionName("ArchiveCE")]
-        public static async Task Run([EventGridTrigger]EventGridEvent eventGridEvent, ILogger log, ExecutionContext context)
+        public static async Task Run([EventGridTrigger]EventGridEvent eventGridEvent, ILogger log, Microsoft.Azure.WebJobs.ExecutionContext context)
         {
             log.LogTrace("Test trace log");
             log.LogDebug("Test debug log");
