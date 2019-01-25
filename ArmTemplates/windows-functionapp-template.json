@@ -18,6 +18,12 @@
         },
         "storageAccountName": {
             "type": "string"          
+        }, 
+         "archiveStorageAccountName": {
+            "type": "string"          
+        }, 
+         "continuousExportStorageAccountName": {
+            "type": "string"          
         },  
         "hostingPlanName": {
             "type": "string"
@@ -109,6 +115,14 @@
                         "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('storageAccountName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2015-05-01-preview').key1)]"
                     },
                     {
+                        "name": "ArchiveStorageConnectionString",
+                        "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('archiveStorageAccountName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('archiveStorageAccountName')), '2015-05-01-preview').key1)]"
+                    },
+                     {
+                        "name": "ContinuousExportStorageConnectionString",
+                        "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',parameters('continuousExportStorageAccountName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', parameters('continuousExportStorageAccountName')), '2015-05-01-preview').key1)]"
+                    },
+                    {
                         "name": "FUNCTIONS_EXTENSION_VERSION",
                         "value": "~2"
                     },
@@ -123,6 +137,10 @@
                     {
                         "name": "WEBSITE_NODE_DEFAULT_VERSION",
                         "value": "8.11.1"
+                    },
+                    {
+                        "name": "ArchiveContainerName",
+                        "value": "archive"
                     }
                 ]
             },
