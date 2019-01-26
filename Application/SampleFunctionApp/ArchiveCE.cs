@@ -152,12 +152,12 @@ namespace SampleFunctionApp
                     if (archiveBlob.CopyState.Status == CopyStatus.Success)
                     {
                         log.LogInformation($"Copy has finished. State: {archiveBlob.CopyState}");
-                        log.LogInformation(($"set traceability in archive blob metadata"));
-                        archiveBlob.Metadata.Add("traceability", $"archived by ArchiveCE Azure function at {System.DateTime.UtcNow} UTC)");
-                        await archiveBlob.SetMetadataAsync();
+                        //log.LogInformation(($"set traceability in archive blob metadata"));
+                        //archiveBlob.Metadata.Add("traceability", $"archived by ArchiveCE Azure function at {System.DateTime.UtcNow} UTC)");
+                        //await archiveBlob.SetMetadataAsync();
 
-                        log.LogInformation($"Set storage tier for archive blob to 'archive'");
-                        await archiveBlob.SetStandardBlobTierAsync(StandardBlobTier.Archive);
+                        //log.LogInformation($"Set storage tier for archive blob to 'archive'");
+                        //await archiveBlob.SetStandardBlobTierAsync(StandardBlobTier.Archive);
                         pending = false;
                     }
                     if (archiveBlob.CopyState.Status == CopyStatus.Invalid)
