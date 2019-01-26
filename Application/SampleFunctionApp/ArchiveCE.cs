@@ -139,19 +139,25 @@ namespace SampleFunctionApp
                     if (archiveBlob.CopyState.Status == CopyStatus.Aborted ||
                         archiveBlob.CopyState.Status == CopyStatus.Failed)
                     {
-                        // Log the copy status description for diagnostics 
-                        // and restart copy
-                        log.LogError($"Copy did not complete sucessfully. State: {archiveBlob.CopyState}");
+                       log.LogError($"Copy did not complete sucessfully. State: {archiveBlob.CopyState}");
+                        pending = false;
 
                     }
                     if (archiveBlob.CopyState.Status == CopyStatus.Pending)
                     {
                         log.LogTrace($"Copy has not finished. State: {archiveBlob.CopyState}");
+                        pending = true;
                         Thread.Sleep(5000);
                     }
                     if (archiveBlob.CopyState.Status == CopyStatus.Success)
                     {
                         log.LogInformation($"Copy has finished. State: {archiveBlob.CopyState}");
+                        log.LogInformation(($"set traceability in archive blob metadata"));
+                        archiveBlob.Metadata.Add("traceability", $"archived by ArchiveCE Azure function at {System.DateTime.UtcNow} UTC)");
+                        await archiveBlob.SetMetadataAsync();
+
+                        log.LogInformation($"Set storage tier for archive blob to 'archive'");
+                        await archiveBlob.SetStandardBlobTierAsync(StandardBlobTier.Archive);
                         pending = false;
                     }
                     if (archiveBlob.CopyState.Status == CopyStatus.Invalid)
@@ -163,17 +169,7 @@ namespace SampleFunctionApp
 
                 };
 
-                if (archiveBlob.CopyState.Status == CopyStatus.Success)
-                {
-                    
-                    log.LogInformation(($"set traceability in archive blob metadata"));
-                    archiveBlob.Metadata.Add("traceability", $"archived by ArchiveCE Azure function at {System.DateTime.UtcNow} UTC)");
-                    await archiveBlob.SetMetadataAsync();
-
-                    log.LogInformation($"Set storage tier for archive blob to 'archive'");
-                    await archiveBlob.SetStandardBlobTierAsync(StandardBlobTier.Archive);
-
-                }
+               
             }
             catch (Exception e)
             {
