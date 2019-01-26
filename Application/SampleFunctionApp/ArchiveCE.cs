@@ -135,7 +135,7 @@ namespace SampleFunctionApp
                 bool pending = true;
                 while (pending)
                 {
-                    pending = false;
+                    
                     if (archiveBlob.CopyState.Status == CopyStatus.Aborted ||
                         archiveBlob.CopyState.Status == CopyStatus.Failed)
                     {
@@ -144,18 +144,28 @@ namespace SampleFunctionApp
                         log.LogError($"Copy did not complete sucessfully. State: {archiveBlob.CopyState}");
 
                     }
-                    else if (archiveBlob.CopyState.Status == CopyStatus.Pending)
+                    if (archiveBlob.CopyState.Status == CopyStatus.Pending)
                     {
                         log.LogTrace($"Copy has not finished. State: {archiveBlob.CopyState}");
-                        pending = true;
                         Thread.Sleep(5000);
                     }
-                    log.LogInformation($"Copy has finished. State: {archiveBlob.CopyState}");
+                    if (archiveBlob.CopyState.Status == CopyStatus.Success)
+                    {
+                        log.LogInformation($"Copy has finished. State: {archiveBlob.CopyState}");
+                        pending = false;
+                    }
+                    if (archiveBlob.CopyState.Status == CopyStatus.Invalid)
+                    {
+                        log.LogInformation($"Copy is INVALID. State: {archiveBlob.CopyState}");
+                        pending = false;
+                    }
+
+
                 };
 
                 if (archiveBlob.CopyState.Status == CopyStatus.Success)
                 {
-                    log.LogInformation($"Copy completed sucessfully!");
+                    
                     log.LogInformation(($"set traceability in archive blob metadata"));
                     archiveBlob.Metadata.Add("traceability", $"archived by ArchiveCE Azure function at {System.DateTime.UtcNow} UTC)");
                     await archiveBlob.SetMetadataAsync();
