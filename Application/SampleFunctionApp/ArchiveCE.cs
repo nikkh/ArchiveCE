@@ -128,6 +128,11 @@ namespace SampleFunctionApp
 
                 CloudBlockBlob archiveBlob = archiveStorageContainer.GetBlockBlobReference(blobName);
                 log.LogInformation($"archiveBlob.Uri: {archiveBlob.Uri}");
+                if (await archiveBlob.ExistsAsync())
+                {
+                    log.LogWarning($"Archive blob unexpectedly exists: {archiveBlob.Uri}");
+                }
+                
                 
                 log.LogInformation(($"copying blob to archive account {archiveStorageAccount.BlobStorageUri}, archive container {archiveContainerName}"));
                 string result = await archiveBlob.StartCopyAsync(new Uri(ceBlobSAS));
