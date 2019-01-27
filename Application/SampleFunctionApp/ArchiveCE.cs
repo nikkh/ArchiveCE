@@ -130,6 +130,7 @@ namespace SampleFunctionApp
 
                 CloudBlockBlob archiveBlob = archiveStorageContainer.GetBlockBlobReference(blobName);
                 log.LogInformation($"{context.InvocationId} -archiveBlob.Uri: {archiveBlob.Uri}");
+                var archiveBlobUri = archiveBlob.Uri;
                 if (await archiveBlob.DeleteIfExistsAsync())
                 {
                     log.LogWarning($"{context.InvocationId} - Archive blob already existed and will was deleted: {archiveBlob.Uri}");
@@ -137,7 +138,14 @@ namespace SampleFunctionApp
                                 
                 log.LogInformation(($"{context.InvocationId} - Copying blob to archive account {archiveStorageAccount.BlobStorageUri}, archive container {archiveContainerName}"));
                 await archiveBlob.StartCopyAsync(new Uri(ceBlobSAS));
-                
+
+                if (CopyComplete(log, context.InvocationId.ToString(), archiveStorageContainer, archiveBlobUri, 5000, 10))
+                {
+                    log.LogInformation($"{context.InvocationId} - Copying completed sucessfully!");
+                }
+
+                log.LogInformation(($"{context.InvocationId} - Function {context.FunctionName} completed sucessfully."));
+
             }
             catch (Exception e)
             {
@@ -152,7 +160,49 @@ namespace SampleFunctionApp
                 throw e;
             }
 
-            log.LogInformation(($"{context.InvocationId} - Function {context.FunctionName} completed sucessfully."));
+            
+        }
+
+        private static bool CopyComplete(ILogger log, string invocationId, CloudBlobContainer archiveStorageContainer, Uri archiveBlobUri, int waitInMs, int attempts)
+        {
+            log.LogInformation(($"{invocationId} - Monitoring state of asynchronous blob copy {archiveBlobUri.ToString()}"));
+            
+            for (int i = 1; i < attempts; i++)
+            {
+                log.LogInformation(($"{invocationId} - Monitoring copy - attempt {i}"));
+                var blob = archiveStorageContainer.GetBlobReference(archiveBlobUri.ToString());
+                
+                if (blob.CopyState != null)
+                {
+                    log.LogInformation(($"{invocationId} - FOR DEBUG - Copy Completion Time: {blob.CopyState.CompletionTime}"));
+                    log.LogInformation(($"{invocationId} - FOR DEBUG - CopyState: {blob.CopyState.ToString()}"));
+                    if (blob.CopyState.Status == CopyStatus.Success)
+                    {
+                        log.LogInformation(($"{invocationId} - Copy completed sucessfully!"));
+                        return true;
+                    }
+                    
+                    if ((blob.CopyState.Status == CopyStatus.Aborted) || (blob.CopyState.Status == CopyStatus.Failed) || (blob.CopyState.Status == CopyStatus.Invalid))
+                    {
+                        log.LogInformation($"{invocationId} - Copy did not complete sucessfully.  Status was {blob.CopyState.Status.ToString()}");
+                        return false;
+                    }
+                    if (blob.CopyState.Status == CopyStatus.Pending)
+                    {
+                        log.LogInformation($"{invocationId} - Copy pending. Sleeping {waitInMs} ms.");
+                        Thread.Sleep(waitInMs);
+                    }
+
+                }
+                else
+                {
+                    
+                    log.LogInformation($"{invocationId} - Unexpected error - no copy state available for blob");
+                    return false;
+                }
+            }
+            log.LogInformation(($"{invocationId} - Asynchronous Copy had still not completed after {attempts} attempts, pausing for {waitInMs} ms between each attempt. This doesnt mean that the copy did not complete - but it might be worth checking"));
+            return false;
         }
     }
 }
