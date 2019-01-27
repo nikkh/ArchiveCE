@@ -139,9 +139,16 @@ namespace SampleFunctionApp
                 log.LogInformation(($"{context.InvocationId} - Copying blob {blobName} to archive account {archiveStorageAccount.BlobStorageUri}, archive container {archiveContainerName}"));
                 await archiveBlob.StartCopyAsync(new Uri(ceBlobSAS));
 
-                if (await CopyComplete(log, context.InvocationId.ToString(), archiveStorageContainer, blobName, 5000, 10))
+                if (await CopyComplete(log, context.InvocationId.ToString(), archiveStorageContainer, blobName, 1000, 20))
                 {
                     log.LogInformation($"{context.InvocationId} - Copying completed sucessfully!");
+                    archiveBlob.Metadata.Add("origin", ceBlob.Uri.ToString());
+                    archiveBlob.Metadata.Add("function", context.FunctionName);
+                    archiveBlob.Metadata.Add("invocationId", context.InvocationId.ToString());
+                    await archiveBlob.SetMetadataAsync();
+                    log.LogInformation($"{context.InvocationId} - Archive metadata set on blob {blobName}");
+                    await archiveBlob.SetStandardBlobTierAsync(StandardBlobTier.Archive);
+                    log.LogInformation($"{context.InvocationId} - Archived blob set to archive storage tier {blobName}");
                 }
 
                 log.LogInformation(($"{context.InvocationId} - Function {context.FunctionName} completed sucessfully."));
