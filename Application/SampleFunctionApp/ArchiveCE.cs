@@ -128,35 +128,34 @@ namespace SampleFunctionApp
 
                 CloudBlockBlob archiveBlob = archiveStorageContainer.GetBlockBlobReference(blobName);
                 log.LogInformation($"archiveBlob.Uri: {archiveBlob.Uri}");
-                if (await archiveBlob.ExistsAsync())
+                if (await archiveBlob.DeleteIfExistsAsync())
                 {
-                    log.LogWarning($"Archive blob unexpectedly exists: {archiveBlob.Uri}");
+                    log.LogWarning($"Archive blob already existed and will was deleted: {archiveBlob.Uri}");
                 }
-                
-                
+                                
                 log.LogInformation(($"copying blob to archive account {archiveStorageAccount.BlobStorageUri}, archive container {archiveContainerName}"));
                 string result = await archiveBlob.StartCopyAsync(new Uri(ceBlobSAS));
-
+                log.LogInformation($"ENTERING PENDING LOOP.  CopyState is: {archiveBlob.CopyState.Status}");
                 bool pending = true;
                 while (pending)
                 {
-                    log.LogInformation($"ENTERING PENDING LOOP.  CopyState is: {archiveBlob.CopyState}");
+                    log.LogInformation($"INSIDE PENDING LOOP.  CopyState is: {archiveBlob.CopyState.Status}");
                     if (archiveBlob.CopyState.Status == CopyStatus.Aborted ||
                         archiveBlob.CopyState.Status == CopyStatus.Failed)
                     {
-                       log.LogError($"Copy did not complete sucessfully. State: {archiveBlob.CopyState}");
+                       log.LogError($"Copy did not complete sucessfully. State: {archiveBlob.CopyState.Status}");
                         pending = false;
 
                     }
                     if (archiveBlob.CopyState.Status == CopyStatus.Pending)
                     {
-                        log.LogInformation($"Copy has not finished. State: {archiveBlob.CopyState}");
+                        log.LogInformation($"Copy has not finished. State: {archiveBlob.CopyState.Status}");
                         pending = true;
                         Thread.Sleep(5000);
                     }
                     if (archiveBlob.CopyState.Status == CopyStatus.Success)
                     {
-                        log.LogInformation($"Copy has finished. State: {archiveBlob.CopyState}");
+                        log.LogInformation($"Copy has finished. State: {archiveBlob.CopyState.Status}");
                         //log.LogInformation(($"set traceability in archive blob metadata"));
                         //archiveBlob.Metadata.Add("traceability", $"archived by ArchiveCE Azure function at {System.DateTime.UtcNow} UTC)");
                         //await archiveBlob.SetMetadataAsync();
@@ -167,7 +166,7 @@ namespace SampleFunctionApp
                     }
                     if (archiveBlob.CopyState.Status == CopyStatus.Invalid)
                     {
-                        log.LogInformation($"Copy is INVALID. State: {archiveBlob.CopyState}");
+                        log.LogError($"Copy is INVALID. State: {archiveBlob.CopyState.Status}");
                         pending = false;
                     }
 
