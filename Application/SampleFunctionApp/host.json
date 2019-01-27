@@ -3,7 +3,8 @@
   "logging": {
         "fileLoggingMode": "debugOnly",
     "logLevel": {
-      "SampleFunctionApp.ArchiveCE": "Information",
+      "ArchiveCE": "Information",
+      "Function": "Information",
       "default": "Warning"
     }
     }
