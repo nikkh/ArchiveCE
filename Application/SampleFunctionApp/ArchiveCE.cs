@@ -51,7 +51,7 @@ namespace SampleFunctionApp
                 log.LogCritical(m);
                 throw new Exception(m);
             }
-            log.LogInformation($"{context.InvocationId} - CE export storage connection string: {continuousExportStorageConnectionString.Substring(0, 40)}");
+            log.LogDebug($"{context.InvocationId} - CE export storage connection string: {continuousExportStorageConnectionString.Substring(0, 40)}");
 
             var archiveStorageConnectionString = config["ArchiveStorageConnectionString"];
             if (archiveStorageConnectionString == null)
@@ -60,7 +60,7 @@ namespace SampleFunctionApp
                 log.LogCritical(m);
                 throw new Exception(m);
             }
-            log.LogInformation($"{context.InvocationId} - Archive storage connection string: {archiveStorageConnectionString.Substring(0, 40)}");
+            log.LogDebug($"{context.InvocationId} - Archive storage connection string: {archiveStorageConnectionString.Substring(0, 40)}");
 
 
             var archiveContainerName = config["ArchiveContainerName"];
@@ -74,16 +74,16 @@ namespace SampleFunctionApp
                         
             var jData = JObject.Parse(eventGridEvent.Data.ToString());
 
-            log.LogInformation($"{context.InvocationId} - Event Type: {eventGridEvent.EventType}");
-            log.LogInformation($"{context.InvocationId} - Subject: {eventGridEvent.Subject}");
+            log.LogDebug($"{context.InvocationId} - Event Type: {eventGridEvent.EventType}");
+            log.LogDebug($"{context.InvocationId} - Subject: {eventGridEvent.Subject}");
             
-            log.LogInformation($"{context.InvocationId} - url: {jData["url"]}");
-            log.LogInformation($"{context.InvocationId} - blobType: {jData["blobType"]}");
-            log.LogInformation($"{context.InvocationId} - contentLength: {jData["contentLength"]}");
+            log.LogDebug($"{context.InvocationId} - url: {jData["url"]}");
+            log.LogDebug($"{context.InvocationId} - blobType: {jData["blobType"]}");
+            log.LogDebug($"{context.InvocationId} - contentLength: {jData["contentLength"]}");
  
             Uri u = new Uri(jData["url"].ToString());
             string ceContainerName = u.Segments[1].Substring(0, u.Segments[1].Length-1);
-            log.LogInformation($"{context.InvocationId} - CE Container: {ceContainerName}");
+            log.LogDebug($"{context.InvocationId} - CE Container: {ceContainerName}");
 
             string blobName = "";
             for (int i = 2; i < u.Segments.Length; i++)
@@ -95,13 +95,13 @@ namespace SampleFunctionApp
             
             try
             {
-                log.LogInformation($"{context.InvocationId} - Get hold of ce storage container");
+                log.LogDebug($"{context.InvocationId} - Get hold of ce storage container");
                 CloudStorageAccount ceStorageAccount = CloudStorageAccount.Parse(continuousExportStorageConnectionString);
                 CloudBlobClient ceStorageClient = ceStorageAccount.CreateCloudBlobClient();
                 CloudBlobContainer ceStorageContainer = ceStorageClient.GetContainerReference(ceContainerName);
-                log.LogInformation($"{context.InvocationId} - ceStorageContainer.Uri: {ceStorageContainer.Uri}");
+                log.LogDebug($"{context.InvocationId} - ceStorageContainer.Uri: {ceStorageContainer.Uri}");
 
-                log.LogInformation($"{context.InvocationId} - Get hold of archive storage container");
+                log.LogDebug($"{context.InvocationId} - Get hold of archive storage container");
                 CloudStorageAccount archiveStorageAccount = CloudStorageAccount.Parse(archiveStorageConnectionString);
                 CloudBlobClient archiveStorageClient = archiveStorageAccount.CreateCloudBlobClient();
                 CloudBlobContainer archiveStorageContainer = archiveStorageClient.GetContainerReference(archiveContainerName);
@@ -112,21 +112,21 @@ namespace SampleFunctionApp
                     await archiveStorageContainer.SetMetadataAsync();
                 }
                 
-                log.LogInformation($"{context.InvocationId} - archiveStorageContainer.Uri: {archiveStorageContainer.Uri}");
+                log.LogDebug($"{context.InvocationId} - archiveStorageContainer.Uri: {archiveStorageContainer.Uri}");
 
                 CloudBlockBlob ceBlob = ceStorageContainer.GetBlockBlobReference(blobName);
-                log.LogInformation($"{context.InvocationId} - ceBlob.Uri: {ceBlob.Uri}");
+                log.LogInformation($"{context.InvocationId} - Uri for Continuous Export Blob: {ceBlob.Uri}");
                 var policy = new SharedAccessBlobPolicy
                 {
                     Permissions = SharedAccessBlobPermissions.Read,
                     SharedAccessStartTime = DateTime.UtcNow.AddMinutes(-15),
                     SharedAccessExpiryTime = DateTime.UtcNow.AddDays(7)
                 };
-                log.LogInformation($"{context.InvocationId} - sharedAccessPolicy: {policy.ToString()}");
+                log.LogDebug($"{context.InvocationId} - sharedAccessPolicy: {policy.ToString()}");
                 var ceBlobToken = ceBlob.GetSharedAccessSignature(policy);
-                log.LogInformation($"{context.InvocationId} - ceBlobToken: {ceBlobToken.ToString()}");
+                log.LogDebug($"{context.InvocationId} - ceBlobToken: {ceBlobToken.ToString()}");
                 var ceBlobSAS = string.Format("{0}{1}", ceBlob.Uri, ceBlobToken);
-                log.LogInformation($"{context.InvocationId} - ceBlobSAS: {ceBlobSAS.ToString()}");
+                log.LogDebug($"{context.InvocationId} - ceBlobSAS: {ceBlobSAS.ToString()}");
 
                 CloudBlockBlob archiveBlob = archiveStorageContainer.GetBlockBlobReference(blobName);
                 log.LogInformation($"{context.InvocationId} -archiveBlob.Uri: {archiveBlob.Uri}");
@@ -136,7 +136,7 @@ namespace SampleFunctionApp
                     log.LogWarning($"{context.InvocationId} - Archive blob already existed and will was deleted: {archiveBlob.Uri}");
                 }
                                 
-                log.LogInformation(($"{context.InvocationId} - Copying blob to archive account {archiveStorageAccount.BlobStorageUri}, archive container {archiveContainerName}"));
+                log.LogInformation(($"{context.InvocationId} - Copying blob {blobName} to archive account {archiveStorageAccount.BlobStorageUri}, archive container {archiveContainerName}"));
                 await archiveBlob.StartCopyAsync(new Uri(ceBlobSAS));
 
                 if (await CopyComplete(log, context.InvocationId.ToString(), archiveStorageContainer, blobName, 5000, 10))
@@ -174,8 +174,7 @@ namespace SampleFunctionApp
                 await blob.FetchAttributesAsync();
                 if (blob.CopyState != null)
                 {
-                    log.LogInformation(($"{invocationId} - FOR DEBUG - Copy Completion Time: {blob.CopyState.CompletionTime}"));
-                    log.LogInformation(($"{invocationId} - FOR DEBUG - CopyState: {blob.CopyState.ToString()}"));
+                    
                     if (blob.CopyState.Status == CopyStatus.Success)
                     {
                         log.LogInformation(($"{invocationId} - Copy completed sucessfully!"));
@@ -184,12 +183,12 @@ namespace SampleFunctionApp
                     
                     if ((blob.CopyState.Status == CopyStatus.Aborted) || (blob.CopyState.Status == CopyStatus.Failed) || (blob.CopyState.Status == CopyStatus.Invalid))
                     {
-                        log.LogInformation($"{invocationId} - Copy did not complete sucessfully.  Status was {blob.CopyState.Status.ToString()}");
+                        log.LogCritical($"{invocationId} - Copy did not complete sucessfully.  Status was {blob.CopyState.Status.ToString()}");
                         return false;
                     }
                     if (blob.CopyState.Status == CopyStatus.Pending)
                     {
-                        log.LogInformation($"{invocationId} - Copy pending. Sleeping {waitInMs} ms.");
+                        log.LogDebug($"{invocationId} - Copy pending. Sleeping {waitInMs} ms.");
                         Thread.Sleep(waitInMs);
                     }
 
@@ -198,11 +197,11 @@ namespace SampleFunctionApp
                 {
                     
                     
-                    log.LogInformation($"{invocationId} - Unexpected error - no copy state available for blob");
+                    log.LogError($"{invocationId} - Unexpected error - no copy state available for blob");
                     return false;
                 }
             }
-            log.LogInformation(($"{invocationId} - Asynchronous Copy had still not completed after {attempts} attempts, pausing for {waitInMs} ms between each attempt. This doesnt mean that the copy did not complete - but it might be worth checking"));
+            log.LogWarning(($"{invocationId} - Asynchronous Copy had still not completed after {attempts} attempts, pausing for {waitInMs} ms between each attempt. This doesnt mean that the copy did not complete - but it might be worth checking"));
             return false;
         }
     }
