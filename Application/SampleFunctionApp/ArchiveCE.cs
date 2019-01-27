@@ -139,7 +139,7 @@ namespace SampleFunctionApp
                 log.LogInformation(($"{context.InvocationId} - Copying blob to archive account {archiveStorageAccount.BlobStorageUri}, archive container {archiveContainerName}"));
                 await archiveBlob.StartCopyAsync(new Uri(ceBlobSAS));
 
-                if (CopyComplete(log, context.InvocationId.ToString(), archiveStorageContainer, blobName, 5000, 10))
+                if (await CopyComplete(log, context.InvocationId.ToString(), archiveStorageContainer, blobName, 5000, 10))
                 {
                     log.LogInformation($"{context.InvocationId} - Copying completed sucessfully!");
                 }
@@ -163,15 +163,15 @@ namespace SampleFunctionApp
             
         }
 
-        private static bool CopyComplete(ILogger log, string invocationId, CloudBlobContainer archiveStorageContainer, string blobName, int waitInMs, int attempts)
+        private static async Task<bool> CopyComplete(ILogger log, string invocationId, CloudBlobContainer archiveStorageContainer, string blobName, int waitInMs, int attempts)
         {
             log.LogInformation(($"{invocationId} - Monitoring state of asynchronous blob copy {blobName}"));
             
             for (int i = 1; i < attempts; i++)
             {
                 log.LogInformation(($"{invocationId} - Monitoring copy - attempt {i}"));
-                var blob = archiveStorageContainer.GetBlobReference(blobName);
-                
+                var blob = archiveStorageContainer.GetBlockBlobReference(blobName);
+                await blob.FetchAttributesAsync();
                 if (blob.CopyState != null)
                 {
                     log.LogInformation(($"{invocationId} - FOR DEBUG - Copy Completion Time: {blob.CopyState.CompletionTime}"));
@@ -196,6 +196,7 @@ namespace SampleFunctionApp
                 }
                 else
                 {
+                    
                     
                     log.LogInformation($"{invocationId} - Unexpected error - no copy state available for blob");
                     return false;
