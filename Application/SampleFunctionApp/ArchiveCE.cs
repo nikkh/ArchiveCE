@@ -135,71 +135,24 @@ namespace SampleFunctionApp
                     log.LogWarning($"{context.InvocationId} - Archive blob already existed and will was deleted: {archiveBlob.Uri}");
                 }
                                 
-                log.LogInformation(($"{context.InvocationId} - copying blob to archive account {archiveStorageAccount.BlobStorageUri}, archive container {archiveContainerName}"));
-                archiveBlob.StartCopyAsync(new Uri(ceBlobSAS)).RunSynchronously();
-                log.LogInformation($"{context.InvocationId} - ENTERING PENDING LOOP.  CopyState is: {archiveBlob.CopyState.Status}");
-                bool pending = true;
-                while (pending)
-                {
-                    archiveBlob = archiveStorageContainer.GetBlockBlobReference(blobName);
-                    log.LogInformation($"{context.InvocationId} - INSIDE PENDING LOOP.  CopyState is: {archiveBlob.CopyState.Status}");
-
-                    if (archiveBlob.CopyState.Status == CopyStatus.Aborted ||
-                        archiveBlob.CopyState.Status == CopyStatus.Failed)
-                    {
-                       log.LogError($"{context.InvocationId} - Copy did not complete sucessfully. State: {archiveBlob.CopyState.Status}");
-                        pending = false;
-
-                    }
-                    else if (archiveBlob.CopyState.Status == CopyStatus.Pending)
-                    {
-                        log.LogInformation($"{context.InvocationId} - Copy has not finished. State: {archiveBlob.CopyState.Status}");
-                        pending = true;
-                        Thread.Sleep(15000);
-                    }
-                    else if (archiveBlob.CopyState.Status == CopyStatus.Success)
-                    {
-                        log.LogInformation($"{context.InvocationId} - Copy has finished. State: {archiveBlob.CopyState.Status}");
-                        //log.LogInformation(($"set traceability in archive blob metadata"));
-                        //archiveBlob.Metadata.Add("traceability", $"archived by ArchiveCE Azure function at {System.DateTime.UtcNow} UTC)");
-                        //await archiveBlob.SetMetadataAsync();
-
-                        //log.LogInformation($"Set storage tier for archive blob to 'archive'");
-                        //await archiveBlob.SetStandardBlobTierAsync(StandardBlobTier.Archive);
-                        pending = false;
-                    }
-                    else if (archiveBlob.CopyState.Status == CopyStatus.Invalid)
-                    {
-                        log.LogError($"{context.InvocationId} - Copy is INVALID. State: {archiveBlob.CopyState.Status}");
-                        pending = false;
-                    }
-                    else
-                    {
-                        log.LogError($"{context.InvocationId} - Unexpected pending state: {archiveBlob.CopyState.Status}.  Loop will be terminated");
-                        pending = false;
-                        
-                    }
-
-
-                };
-
-               
+                log.LogInformation(($"{context.InvocationId} - Copying blob to archive account {archiveStorageAccount.BlobStorageUri}, archive container {archiveContainerName}"));
+                await archiveBlob.StartCopyAsync(new Uri(ceBlobSAS));
+                
             }
             catch (Exception e)
             {
-                log.LogError($"{context.InvocationId} - caught and rethrown exception {e.Message}");
-                //log.LogError($"Unable to archive blob Name: {blobName}.  Exception was {e.Message}");
-                //log.LogError($"Unable to archive blob Name: {blobName}.  Stacktrace was {e.StackTrace}");
-                //if (e.InnerException != null)
-                //{
-                //    log.LogError($"Unable to archive blob Name: {blobName}.  Inner Exception was {e.InnerException.Message}");
-                //    log.LogError($"Unable to archive blob Name: {blobName}.  Stacktrace was {e.InnerException.StackTrace}");
-                //}
+
+                log.LogError($"{context.InvocationId} - Exception {e.Message}, Unable to archive blob Name: {blobName}.  ");
+                log.LogError($"{context.InvocationId} - Stacktrace {e.StackTrace}, Unable to archive blob Name: {blobName}.");
+                if (e.InnerException != null)
+                {
+                    log.LogError($"{context.InvocationId} - Inner Exception was {e.InnerException.Message}");
+                    
+                }
                 throw e;
             }
 
-           
-
+            log.LogInformation(($"{context.InvocationId} - Function {context.FunctionName} completed sucessfully."));
         }
     }
 }
