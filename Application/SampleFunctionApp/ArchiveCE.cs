@@ -130,7 +130,7 @@ namespace SampleFunctionApp
 
                 CloudBlockBlob archiveBlob = archiveStorageContainer.GetBlockBlobReference(blobName);
                 log.LogInformation($"{context.InvocationId} -archiveBlob.Uri: {archiveBlob.Uri}");
-                var archiveBlobUri = archiveBlob.Uri;
+                
                 if (await archiveBlob.DeleteIfExistsAsync())
                 {
                     log.LogWarning($"{context.InvocationId} - Archive blob already existed and will was deleted: {archiveBlob.Uri}");
@@ -139,7 +139,7 @@ namespace SampleFunctionApp
                 log.LogInformation(($"{context.InvocationId} - Copying blob to archive account {archiveStorageAccount.BlobStorageUri}, archive container {archiveContainerName}"));
                 await archiveBlob.StartCopyAsync(new Uri(ceBlobSAS));
 
-                if (CopyComplete(log, context.InvocationId.ToString(), archiveStorageContainer, archiveBlobUri, 5000, 10))
+                if (CopyComplete(log, context.InvocationId.ToString(), archiveStorageContainer, blobName, 5000, 10))
                 {
                     log.LogInformation($"{context.InvocationId} - Copying completed sucessfully!");
                 }
@@ -163,14 +163,14 @@ namespace SampleFunctionApp
             
         }
 
-        private static bool CopyComplete(ILogger log, string invocationId, CloudBlobContainer archiveStorageContainer, Uri archiveBlobUri, int waitInMs, int attempts)
+        private static bool CopyComplete(ILogger log, string invocationId, CloudBlobContainer archiveStorageContainer, string blobName, int waitInMs, int attempts)
         {
-            log.LogInformation(($"{invocationId} - Monitoring state of asynchronous blob copy {archiveBlobUri.ToString()}"));
+            log.LogInformation(($"{invocationId} - Monitoring state of asynchronous blob copy {blobName}"));
             
             for (int i = 1; i < attempts; i++)
             {
                 log.LogInformation(($"{invocationId} - Monitoring copy - attempt {i}"));
-                var blob = archiveStorageContainer.GetBlobReference(archiveBlobUri.ToString());
+                var blob = archiveStorageContainer.GetBlobReference(blobName);
                 
                 if (blob.CopyState != null)
                 {
