@@ -136,13 +136,14 @@ namespace SampleFunctionApp
                 }
                                 
                 log.LogInformation(($"{context.InvocationId} - copying blob to archive account {archiveStorageAccount.BlobStorageUri}, archive container {archiveContainerName}"));
-                string result = await archiveBlob.StartCopyAsync(new Uri(ceBlobSAS));
+                archiveBlob.StartCopyAsync(new Uri(ceBlobSAS)).RunSynchronously();
                 log.LogInformation($"{context.InvocationId} - ENTERING PENDING LOOP.  CopyState is: {archiveBlob.CopyState.Status}");
                 bool pending = true;
                 while (pending)
                 {
                     archiveBlob = archiveStorageContainer.GetBlockBlobReference(blobName);
                     log.LogInformation($"{context.InvocationId} - INSIDE PENDING LOOP.  CopyState is: {archiveBlob.CopyState.Status}");
+
                     if (archiveBlob.CopyState.Status == CopyStatus.Aborted ||
                         archiveBlob.CopyState.Status == CopyStatus.Failed)
                     {
