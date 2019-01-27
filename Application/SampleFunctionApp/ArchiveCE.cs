@@ -140,7 +140,7 @@ namespace SampleFunctionApp
                 bool pending = true;
                 while (pending)
                 {
-                    
+                    log.LogInformation($"ENTERING PENDING LOOP.  CopyState is: {archiveBlob.CopyState}");
                     if (archiveBlob.CopyState.Status == CopyStatus.Aborted ||
                         archiveBlob.CopyState.Status == CopyStatus.Failed)
                     {
@@ -150,7 +150,7 @@ namespace SampleFunctionApp
                     }
                     if (archiveBlob.CopyState.Status == CopyStatus.Pending)
                     {
-                        log.LogTrace($"Copy has not finished. State: {archiveBlob.CopyState}");
+                        log.LogInformation($"Copy has not finished. State: {archiveBlob.CopyState}");
                         pending = true;
                         Thread.Sleep(5000);
                     }
