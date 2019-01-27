@@ -141,6 +141,7 @@ namespace SampleFunctionApp
                 bool pending = true;
                 while (pending)
                 {
+                    archiveBlob = archiveStorageContainer.GetBlockBlobReference(blobName);
                     log.LogInformation($"{context.InvocationId} - INSIDE PENDING LOOP.  CopyState is: {archiveBlob.CopyState.Status}");
                     if (archiveBlob.CopyState.Status == CopyStatus.Aborted ||
                         archiveBlob.CopyState.Status == CopyStatus.Failed)
