@@ -71,17 +71,27 @@ namespace SampleFunctionApp
             }
 
             log.LogInformation($"{context.InvocationId} - Archive container name: {archiveContainerName}");
-                        
-            var jData = JObject.Parse(eventGridEvent.Data.ToString());
 
-            log.LogDebug($"{context.InvocationId} - Event Type: {eventGridEvent.EventType}");
-            log.LogDebug($"{context.InvocationId} - Subject: {eventGridEvent.Subject}");
+            Uri u = null;
+            try
+            {
+                var jData = JObject.Parse(eventGridEvent.Data.ToString());
+                log.LogDebug($"{context.InvocationId} - Event Type: {eventGridEvent.EventType}");
+                log.LogDebug($"{context.InvocationId} - Subject: {eventGridEvent.Subject}");
+                log.LogDebug($"{context.InvocationId} - url: {jData["url"]}");
+                log.LogDebug($"{context.InvocationId} - blobType: {jData["blobType"]}");
+                log.LogDebug($"{context.InvocationId} - contentLength: {jData["contentLength"]}");
+                u = new Uri(jData["url"].ToString());
+
+            }
+            catch (Exception e)
+            {
+                log.LogCritical($"{context.InvocationId} - Unable to parse Event Grid Event. {eventGridEvent.Data.ToString()}.  {e.Message}. Processing aborted for this event.");
+                return;
+            }
             
-            log.LogDebug($"{context.InvocationId} - url: {jData["url"]}");
-            log.LogDebug($"{context.InvocationId} - blobType: {jData["blobType"]}");
-            log.LogDebug($"{context.InvocationId} - contentLength: {jData["contentLength"]}");
  
-            Uri u = new Uri(jData["url"].ToString());
+            
             string ceContainerName = u.Segments[1].Substring(0, u.Segments[1].Length-1);
             log.LogDebug($"{context.InvocationId} - CE Container: {ceContainerName}");
 

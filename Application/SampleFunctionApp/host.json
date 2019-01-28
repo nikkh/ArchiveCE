@@ -5,6 +5,7 @@
     "logLevel": {
       "ArchiveCE": "Information",
       "Function": "Information",
+      "SampleFunctionApp.ArchiveCE": "Debug",
       "default": "Warning"
     }
     }
