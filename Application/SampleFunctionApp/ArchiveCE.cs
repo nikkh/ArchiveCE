@@ -151,7 +151,7 @@ namespace SampleFunctionApp
 
                 if (await CopyComplete(log, context.InvocationId.ToString(), archiveStorageContainer, blobName, 1000, 20))
                 {
-                    log.LogInformation($"{context.InvocationId} - Copying completed sucessfully!");
+                    
                     archiveBlob.Metadata.Add("origin", ceBlob.Uri.ToString());
                     archiveBlob.Metadata.Add("function", context.FunctionName);
                     archiveBlob.Metadata.Add("invocationId", context.InvocationId.ToString());
