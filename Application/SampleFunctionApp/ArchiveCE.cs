@@ -23,13 +23,7 @@ namespace SampleFunctionApp
         public static async Task Run([EventGridTrigger]EventGridEvent eventGridEvent, ILogger log, Microsoft.Azure.WebJobs.ExecutionContext context)
         {
             
-            log.LogTrace("Test trace log");
-            log.LogDebug("Test debug log");
-            log.LogInformation("Test information log");
-            log.LogWarning("Test warning log");
-            log.LogError("Test error log");
-            log.LogCritical("Test critical log");
-            log.LogMetric("Test metric log", 3.14157);
+            
 
             log.LogInformation($"ArchiveCE function was triggered with the following Event Data: {eventGridEvent.Data}");
             if (eventGridEvent.EventType != "Microsoft.Storage.BlobCreated")

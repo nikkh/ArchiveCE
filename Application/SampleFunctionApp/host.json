@@ -1,13 +1,4 @@
 {
-  "version": "2.0",
-  "logging": {
-        "fileLoggingMode": "debugOnly",
-    "logLevel": {
-      "ArchiveCE": "Information",
-      "Function": "Information",
-      "SampleFunctionApp.ArchiveCE": "Debug",
-      "SampleFunctionApp.ArchiveCE.ArchiveCE": "Debug",
-      "default": "Warning"
-    }
-    }
+  "version": "2.0"
+ 
 }
