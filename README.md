@@ -24,6 +24,8 @@ ArchiveContainerName is the contaier within the Archive Storage account where th
 
 ContinuousExportStorageConnectionString is the connection string for the storage where App Insights has been configured to export to.
 
+Once deployed to azure the same settings will need to be deployed to the Funtion App settings.
+
 **You will need to set up and event grid trigger to pick up changes from the ArchiveStorageConnectionString stroage account and push to the webhook for the Azure Function that does the archiving**
 
 **Give me a shout if you help setting any of this up**
